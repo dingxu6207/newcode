@@ -20,20 +20,22 @@ from photutils import TopHatWindow
 
 start = time.time()
 
-fitsname1 = 'd8549.0088.fits'
-fitsname2 = 'd8549.0091.fits'
-routename1 = 'E:\\shunbianyuan\\code\\phot\\'
-routename2 = 'E:\\shunbianyuan\\code\\phot\\'
+fitsname1 = 'M31%20A2.fts'
+fitsname2 = 'M31%20A2.fts'
+routename1 = 'E:\\shunbianyuan\\ldf_download\\20191020\\'
+routename2 = 'E:\\shunbianyuan\\ldf_download\\20191025\\'
 
 fitsname1 = routename1+fitsname1
 fitsname2 = routename2+fitsname2
 
 
 onehdu = fits.open(fitsname1)
-oneimgdata = onehdu[1].data  #hdu[0].header
+oneimgdata = onehdu[0].data  #hdu[0].header
+oneimgdata = oneimgdata[0:1000,0:1000]
 
 twohdu = fits.open(fitsname2)
-twoimgdata = twohdu[1].data  #hdu[0].header
+twoimgdata = twohdu[0].data  #hdu[0].header
+twoimgdata = twoimgdata[0:1000,0:1000]
 
 def adjustimage(imagedata, coffe):
     mean = np.mean(imagedata)
@@ -156,7 +158,7 @@ listtempA1 =  [0 for i in range(lenlist1)]
 listtempA2 =  [0 for i in range(lenlist2)]
 counttemp = 0
 bilv = 0.1
-dianchengsum = 200
+dianchengsum = 300
 #jiezhistar = min(A1regionnum, A2regionnum)
 jiezhistar = 30     
 for i in range(jiezhistar):
@@ -296,7 +298,7 @@ def convimg(position,img1,img2,delx,dely):
     cropimg2 = img2[x-k-delx:x+k-delx,y-k-dely:y+k-dely]
     return cropimg1,cropimg2
 
-cropimg1,cropimg2 = convimg(mylist2[100],twoimgdata,oneimgdata,delx,dely)
+cropimg1,cropimg2 = convimg(mylist2[10],twoimgdata,oneimgdata,delx,dely)
 mincrop1,maxcrop1 = adjustimage(cropimg1,coffe = 1)
 mincrop2,maxcrop2 = adjustimage(cropimg2,coffe = 1)
 plt.figure(5)    
