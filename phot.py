@@ -15,6 +15,8 @@ import math
 import time
 from photutils import create_matching_kernel
 from photutils import TopHatWindow
+import sys
+#from skimage import io
 #import scipy.signal as signal
 
 
@@ -296,7 +298,9 @@ def convimg(position,img1,img2,delx,dely):
     cropimg2 = img2[x-k-delx:x+k-delx,y-k-dely:y+k-dely]
     return cropimg1,cropimg2
 
-cropimg1,cropimg2 = convimg(mylist2[100],twoimgdata,oneimgdata,delx,dely)
+listcount = int(sys.argv[1])
+#listcount = 14    
+cropimg1,cropimg2 = convimg(mylist2[listcount],twoimgdata,oneimgdata,delx,dely)
 mincrop1,maxcrop1 = adjustimage(cropimg1,coffe = 1)
 mincrop2,maxcrop2 = adjustimage(cropimg2,coffe = 1)
 plt.figure(5)    
@@ -313,9 +317,10 @@ def make_blurred(gray, PSF, eps=0):
     
     return blurredimage
 
-fcropimg1 = np.float64(cropimg1)
+fcropimg1 = 1.0*np.float64(cropimg1)
 fcropimg2 = np.float64(cropimg2)
 window = TopHatWindow(0.3)
+#window = CosineBellWindow(alpha=0.3)
 kernel = create_matching_kernel(fcropimg1, fcropimg2, window)
 
 
@@ -326,11 +331,16 @@ subimg = np.float64(bluimage) - np.float64(fcropimg2)
 subimg = np.abs(subimg)
 #subimg = signal.medfilt(subimg,(3,3))
 plt.imshow(subimg,vmin=mincrop2,vmax=maxcrop2,cmap='gray')
+filename = 'E:\\shunbianyuan\\BASS\\1\\'+str(listcount)+'.jpg'
+plt.savefig(filename)
+
 
 plt.figure(8)  
 fsubimg = np.float64(fcropimg1) - np.float64(fcropimg2) 
 fsubimg = np.abs(fsubimg)
 plt.imshow(fsubimg,vmin=mincrop2,vmax=maxcrop2,cmap='gray')
+#filename1 = 'E:\\shunbianyuan\\BASS\\'+str(listcount)+'w.jpg'
+#plt.savefig(filename1)
 
 end = time.time()
 print("运行时间:%.2f秒"%(end-start))
