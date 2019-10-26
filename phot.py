@@ -292,7 +292,7 @@ def convimg(position,img1,img2,delx,dely):
     cropimg2 = img2[x-k-delx:x+k-delx,y-k-dely:y+k-dely]
     return cropimg1,cropimg2
 
-cropimg1,cropimg2 = convimg(mylist2[8],twoimgdata,oneimgdata,delx,dely)
+cropimg1,cropimg2 = convimg(mylist2[38],twoimgdata,oneimgdata,delx,dely)
 mincrop1,maxcrop1 = adjustimage(cropimg1,coffe = 1)
 mincrop2,maxcrop2 = adjustimage(cropimg2,coffe = 1)
 plt.figure(5)    
@@ -320,12 +320,12 @@ bluimage = make_blurred(fcropimg1,kernel)
 plt.figure(7)  
 subimg = np.float64(bluimage) - np.float64(fcropimg2) 
 subimg = np.abs(subimg)
-plt.imshow(subimg,vmin=mincrop1,vmax=maxcrop1,cmap='gray')
+plt.imshow(subimg,vmin=minjian,vmax=maxjian,cmap='gray')
 
 plt.figure(8)  
 fsubimg = np.float64(fcropimg1) - np.float64(fcropimg2) 
 fsubimg = np.abs(fsubimg)
-plt.imshow(fsubimg,vmin=mincrop1,vmax=maxcrop2,cmap='gray')
+plt.imshow(fsubimg,vmin=minjian,vmax=maxjian,cmap='gray')
 
 end = time.time()
 print("运行时间:%.2f秒"%(end-start))
