@@ -15,6 +15,7 @@ import math
 import time
 from photutils import create_matching_kernel
 from photutils import TopHatWindow
+import scipy.signal as signal
 
 
 start = time.time()
@@ -255,12 +256,15 @@ plt.imshow(oneimgdata, cmap='gray', vmin = mindata1, vmax = maxdata1, origin='lo
 plt.plot(data1,data0,'*')
 plt.plot(data3,data2,'*')
 plt.plot(data5,data4,'*')
+#plt.plot(mylist2[8][0]+32,mylist2[8][1]+64,'*')
+
 
 plt.figure(3)
 plt.imshow(twoimgdata, cmap='gray', vmin = mindata2, vmax = maxdata2, origin='lower')
 plt.plot(ydata1,ydata0,'*')
 plt.plot(ydata3,ydata2,'*')
 plt.plot(ydata5,ydata4,'*')
+#plt.plot(mylist2[8][0],mylist2[8][1],'-o')
 
 ###图像平移###
 ###图像平移###
@@ -292,7 +296,7 @@ def convimg(position,img1,img2,delx,dely):
     cropimg2 = img2[x-k-delx:x+k-delx,y-k-dely:y+k-dely]
     return cropimg1,cropimg2
 
-cropimg1,cropimg2 = convimg(mylist2[38],twoimgdata,oneimgdata,delx,dely)
+cropimg1,cropimg2 = convimg(mylist2[8],twoimgdata,oneimgdata,delx,dely)
 mincrop1,maxcrop1 = adjustimage(cropimg1,coffe = 1)
 mincrop2,maxcrop2 = adjustimage(cropimg2,coffe = 1)
 plt.figure(5)    
@@ -320,6 +324,7 @@ bluimage = make_blurred(fcropimg1,kernel)
 plt.figure(7)  
 subimg = np.float64(bluimage) - np.float64(fcropimg2) 
 subimg = np.abs(subimg)
+subimg = signal.medfilt(subimg,(3,3))
 plt.imshow(subimg,vmin=minjian,vmax=maxjian,cmap='gray')
 
 plt.figure(8)  
