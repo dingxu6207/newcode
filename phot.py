@@ -15,15 +15,16 @@ import math
 import time
 from photutils import create_matching_kernel
 from photutils import TopHatWindow
-import sys
+from photutils import CosineBellWindow
+#import sys
 #from skimage import io
-#import scipy.signal as signal
+import scipy.signal as signal
 
 
 start = time.time()
 
-fitsname1 = 'd8549.0088.fits'
-fitsname2 = 'd8549.0091.fits'
+fitsname1 = 'd8549.0091.fits'
+fitsname2 = 'd8549.0088.fits'
 routename1 = 'E:\\shunbianyuan\\code\\phot\\'
 routename2 = 'E:\\shunbianyuan\\code\\phot\\'
 
@@ -271,76 +272,63 @@ plt.plot(mylist2[11][0],mylist2[11][1],'-o')
 ###图像平移###
 ###图像平移###
 Ahang,Alie = oneimgdata.shape
-newimage = np.zeros((Ahang,Alie),dtype = np.uint16)
+#newimage = np.zeros((Ahang,Alie),dtype = np.uint16)
 if delx <= 0 and dely <= 0:
+    newimage = np.zeros((Ahang+delx,Alie+dely),dtype = np.uint16)
+    newimage2 = np.zeros((Ahang+delx,Alie+dely),dtype = np.uint16)
     newimage[0:Ahang+delx,0:Alie+dely] = oneimgdata[-delx:Ahang,-dely:Alie]
+    newimage2[0:Ahang+delx,0:Alie+dely] = twoimgdata[0:Ahang+delx,0:Alie+dely]
     
 if delx <= 0 and dely >= 0:
+    newimage = np.zeros((Ahang+delx,Alie-dely),dtype = np.uint16)
+    newimage2 = np.zeros((Ahang+delx,Alie+dely),dtype = np.uint16)
     newimage[0:Ahang+delx,dely:Alie] = oneimgdata[-delx:Ahang,0:Alie-dely]
+    newimage2[0:Ahang+delx,0:Alie-dely] = twoimgdata[0:Ahang+delx,0:Alie-dely]
     
 if delx >= 0 and dely >= 0:
-    newimage[delx:Ahang,dely:Alie] = oneimgdata[0:Ahang-delx,0:Alie-dely]   
+    newimage = np.zeros((Ahang-delx,Alie-dely),dtype = np.uint16)
+    newimage2 = np.zeros((Ahang-delx,Alie-dely),dtype = np.uint16)
+    newimage = oneimgdata[0:Ahang-delx,0:Alie-dely]  
+    newimage2 = twoimgdata[delx:Ahang,dely:Alie]
     
 if delx >= 0 and dely <= 0:
-    newimage[delx:Ahang,0:Alie+dely] = oneimgdata[0:Ahang-delx,-dely:Alie] 
+    newimage = np.zeros((Ahang-delx,Alie+dely),dtype = np.uint16)
+    newimage2 = np.zeros((Ahang-delx,Alie+dely),dtype = np.uint16)
+    newimage[0:Ahang-delx,0:Alie+dely] = oneimgdata[0:Ahang-delx,-dely:Alie] 
+    newimage2 = twoimgdata[0:Ahang-delx,0:Alie+dely]
     
-jianimage = np.float32(newimage) - np.float32(twoimgdata)
-jianimage = np.abs(jianimage)
+jianimage = np.float32(newimage) - np.float32(newimage2)
+#jianimage = np.abs(jianimage)
 minjian,maxjian = adjustimage(jianimage,1)
 plt.figure(4)    
-plt.imshow(jianimage,vmin=mindata1,vmax=maxdata1,cmap='gray') 
+plt.imshow(jianimage,vmin=minjian,vmax=maxjian,cmap='gray') 
 ###PSF展宽###
-def convimg(position,img1,img2,delx,dely):
-    x = round(position[1])
-    y = round(position[0])
-    k = 15
-    cropimg1 = img1[x-k:x+k,y-k:y+k]
-    cropimg2 = img2[x-k-delx:x+k-delx,y-k-dely:y+k-dely]
-    return cropimg1,cropimg2
-
-listcount = int(sys.argv[1])
-#listcount = 14    
-cropimg1,cropimg2 = convimg(mylist2[listcount],twoimgdata,oneimgdata,delx,dely)
-mincrop1,maxcrop1 = adjustimage(cropimg1,coffe = 1)
-mincrop2,maxcrop2 = adjustimage(cropimg2,coffe = 1)
-plt.figure(5)    
-plt.imshow(cropimg1,vmin=mincrop1,vmax=maxcrop1,cmap='gray')
-
-plt.figure(6)    
-plt.imshow(cropimg2,vmin=mincrop2,vmax=maxcrop2,cmap='gray')
-
-def make_blurred(gray, PSF, eps=0):
+def make_blurred(gray, PSF):
     input_fft = np.fft.fft2(gray)# 进行二维数组的傅里叶变换
-    PSF_fft = np.fft.fft2(PSF)+ eps
+    PSF_fft = np.fft.fft2(PSF)
     blurred = np.fft.ifft2(input_fft * PSF_fft)
     blurredimage = np.abs(np.fft.fftshift(blurred))
     
     return blurredimage
 
-fcropimg1 = 1.0*np.float64(cropimg1)
-fcropimg2 = np.float64(cropimg2)
-window = TopHatWindow(0.3)
-#window = CosineBellWindow(alpha=0.3)
-kernel = create_matching_kernel(fcropimg1, fcropimg2, window)
+newimage =np.float64(newimage)
+newimage2 = np.float64(newimage2)
+#window = TopHatWindow(0.3)
+window = CosineBellWindow(alpha=0.35)
+kernel = create_matching_kernel(newimage, newimage2,window)
+bluimage = make_blurred(newimage,kernel)
 
-
-bluimage = make_blurred(fcropimg1,kernel)
-
-plt.figure(7)  
-subimg = np.float64(bluimage) - np.float64(fcropimg2) 
-subimg = np.abs(subimg)
-#subimg = signal.medfilt(subimg,(3,3))
-plt.imshow(subimg,vmin=mincrop2,vmax=maxcrop2,cmap='gray')
-filename = 'E:\\shunbianyuan\\BASS\\1\\'+str(listcount)+'.jpg'
+plt.figure(5)  
+subimg = np.float64(bluimage) - np.float64(newimage2) 
+#subimg = np.abs(subimg)
+subimg = signal.medfilt(subimg,(3,3))
+minsub,maxsub = adjustimage(subimg,3)
+plt.imshow(subimg,vmin=minsub,vmax=maxsub,cmap='gray')
+filename = 'E:\\shunbianyuan\\BASS\\1\\'+str(123)+'.jpg'
 plt.savefig(filename)
 
-
-plt.figure(8)  
-fsubimg = np.float64(fcropimg1) - np.float64(fcropimg2) 
-fsubimg = np.abs(fsubimg)
-plt.imshow(fsubimg,vmin=mincrop2,vmax=maxcrop2,cmap='gray')
-#filename1 = 'E:\\shunbianyuan\\BASS\\'+str(listcount)+'w.jpg'
-#plt.savefig(filename1)
-
+plt.figure(6) 
+minblu,maxblu = adjustimage(bluimage,1) 
+plt.imshow(bluimage,vmin=minblu,vmax=maxblu,cmap='gray')
 end = time.time()
 print("运行时间:%.2f秒"%(end-start))
