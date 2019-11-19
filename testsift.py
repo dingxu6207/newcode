@@ -78,20 +78,6 @@ plt.imshow(twoimgdata, cmap='gray', vmin = mindata2, vmax = maxdata2)
 plt.savefig('two.jpg')
 apertures2.plot(color='blue', lw=1.5, alpha=0.5)
 
-
-def u8img(img):
-    maximg = np.max(img)
-    minimg = np.min(img)
-    guiyiimg = 255*(img-minimg)/(maximg-minimg)
-    return np.uint8(guiyiimg)
-
-
-
-uimg1 = u8img(oneimgdata) 
-uimg2 = u8img(twoimgdata)
-
-
-
 lenposition1 = len(positions1)
 lenposition2 = len(positions2)
 keyimg1 = np.zeros((lenposition1,128),dtype = np.float32)
@@ -111,33 +97,24 @@ index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
 search_params = dict(checks=50)
 flann = cv2.FlannBasedMatcher(index_params,search_params)
 
-
 matches = flann.knnMatch(keyimg1,keyimg2,k=2)
 lenmatches = len(matches)
-temp = np.zeros((int(lenmatches/4),2),dtype = np.uint)
+temp = np.zeros((lenmatches,2),dtype = np.uint)
 j = 0
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.4 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.8 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         print(i,m1.queryIdx,m1.trainIdx)
         temp[j][0] = m1.queryIdx
         temp[j][1] = m1.trainIdx
         j = j+1
-'''
-plt.figure(2)
-plt.imshow(oneimgdata, cmap='gray', vmin = mindata1, vmax = maxdata1)
-plt.plot(positions1[15][0],positions1[15][1],'*')
 
-plt.figure(3)
-plt.imshow(twoimgdata, cmap='gray', vmin = mindata2, vmax = maxdata2)
-plt.plot(positions2[10][0],positions2[10][1],'*')
-'''
 
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
 minhmerge,maxhmerge = adjustimage(hmerge,3)
 plt.figure(2)
 plt.imshow(hmerge, cmap='gray', vmin = minhmerge, vmax = maxhmerge)
 
-for i in range(int(lenmatches/4)):
+for i in range(lenmatches):
     x = temp[i][0]
     y = temp[i][1]
     x10 = positions1[x][0]
