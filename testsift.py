@@ -98,33 +98,50 @@ search_params = dict(checks=50)
 flann = cv2.FlannBasedMatcher(index_params,search_params)
 
 matches = flann.knnMatch(keyimg1,keyimg2,k=2)
-lenmatches = len(matches)
-temp = np.zeros((lenmatches,2),dtype = np.uint)
-j = 0
+
+lenpipei = 0
+temp1 = []
+temp2 = []
 for i, (m1, m2) in enumerate(matches):
     if m1.distance < 0.8 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
-        print(i,m1.queryIdx,m1.trainIdx)
-        temp[j][0] = m1.queryIdx
-        temp[j][1] = m1.trainIdx
-        j = j+1
-
+        lenpipei = lenpipei+1
+        temp1.append(m1.queryIdx)
+        temp2.append(m1.trainIdx)
 
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
 minhmerge,maxhmerge = adjustimage(hmerge,3)
 plt.figure(2)
 plt.imshow(hmerge, cmap='gray', vmin = minhmerge, vmax = maxhmerge)
 
-for i in range(lenmatches):
-    x = temp[i][0]
-    y = temp[i][1]
+srckp1 = []
+srckp2 = []
+for i in range(lenpipei):
+    x = temp1[i]
+    y = temp2[i]
     x10 = positions1[x][0]
     y10 = positions1[x][1]
+    srckp1.append(x10)
+    srckp1.append(y10)
+    src_pts = np.float32(srckp1).reshape(-1,2)
     
     x11 = positions2[y][0]
     y11 = positions2[y][1]
+    srckp2.append(x11)
+    srckp2.append(y11)
+    dst_pts = np.float32(srckp2).reshape(-1,2)
     
-    plt.plot(x10,y10,'*')
-    plt.plot(x11+lie1,y11,'*')
+    #plt.plot(x10,y10,'*')
+    #plt.plot(x11+lie1,y11,'*')
     
-    plt.plot([x10,x11+lie1],[y10,y11])
+    plt.plot([x10,x11+lie1],[y10,y11],linewidth = 0.8)
 
+H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+newimg1 = cv2.warpPerspective(oneimgdata, H, (lie1,hang1))
+minnewimg1,maxnewimg1 = adjustimage(newimg1,3)
+plt.figure(3)
+plt.imshow(newimg1, cmap='gray', vmin = minnewimg1, vmax = maxnewimg1)
+
+minusimg = np.float32(newimg1) - np.float32(twoimgdata)
+minjian,maxjian = adjustimage(minusimg,3)
+plt.figure(3)
+plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
