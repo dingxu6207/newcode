@@ -22,11 +22,10 @@ import copy
 
 start = time.time()
 
-fitsname1 = 'M31%20A17.fts'
-fitsname2 = 'M31%20A17.fts'
-routename1 = 'E:\\shunbianyuan\\ldf_download\\20191030\\'
-routename2 = 'E:\\shunbianyuan\\ldf_download\\20191029\\'
-
+fitsname1 = 'L20180310_08663_025202+3212_60S_SI_278406.FITS'
+fitsname2 = 'L20180310_08663_025204+3211_60S_SI_278434.FITS'
+routename1 = 'E:/AST3/RA0252DEC3212/'
+routename2 = 'E:/AST3/RA0252DEC3212/'
 fitsname1 = routename1+fitsname1
 fitsname2 = routename2+fitsname2
 
@@ -34,12 +33,12 @@ fitsname2 = routename2+fitsname2
 onehdu = fits.open(fitsname1)
 y1imgdata = onehdu[0].data  #hdu[0].header
 oneimgdata = copy.deepcopy(y1imgdata)
-oneimgdata = oneimgdata[500:1000,300:900]
+oneimgdata = y1imgdata[500:1000,300:900]
 
 twohdu = fits.open(fitsname2)
 y2imgdata = twohdu[0].data  #hdu[0].header
 twoimgdata = copy.deepcopy(y2imgdata)
-twoimgdata = twoimgdata[500:1000,300:900]
+twoimgdata = y2imgdata[500:1000,300:900]
 
 def adjustimage(imagedata, coffe):
     mean = np.mean(imagedata)
@@ -304,7 +303,7 @@ jianimage = np.float32(newimage) - np.float32(newimage2)
 minjian,maxjian = adjustimage(jianimage,3)
 plt.figure(4)    
 plt.imshow(jianimage,vmin=minjian,vmax=maxjian,cmap='gray') 
-
+'''
 ###PSF展宽###
 def make_blurred(gray, PSF):
     input_fft = np.fft.fft2(gray)# 进行二维数组的傅里叶变换
@@ -334,3 +333,4 @@ minblu,maxblu = adjustimage(bluimage,3)
 plt.imshow(bluimage,vmin=minblu,vmax=maxblu,cmap='gray')
 end = time.time()
 print("运行时间:%.2f秒"%(end-start))
+'''
