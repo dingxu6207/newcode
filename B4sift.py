@@ -16,8 +16,8 @@ import scipy.signal as signal
 import os
 
 
-fitsname2 = 'E:\\BOOTES4\\20190606\\'+'201906061552050716.fit'
-fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061544540716.fit'
+fitsname2 = 'E:\\BOOTES4\\20190606\\'+'201906061612060716.fit'
+fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061533510716.fit'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
@@ -104,7 +104,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.7 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.8 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
@@ -149,7 +149,7 @@ plt.imshow(newimg1, cmap='gray', vmin = minnewimg1, vmax = maxnewimg1)
 
 minusimg = np.float32(newimg1) - np.float32(imgdata2)
 #minusimg = np.abs(minusimg)
-minjian,maxjian = adjustimage(minusimg,4)
+minjian,maxjian = adjustimage(minusimg,3)
 plt.figure(3)
 plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
 

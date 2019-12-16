@@ -11,9 +11,12 @@ import matplotlib.pyplot as plt
 from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
+import scipy.signal as signal
 
 fitshdu = fits.open('E:\\BOOTES4\\20190606\\'+'201906061524450716.fit')
 fitsdata = fitshdu[0].data
+fitsdata = np.float32(fitsdata)
+fitsdata = signal.medfilt2d(fitsdata, kernel_size=9)  # 二维中值滤波
 
 def adjustimage(imagedata, coffe):
     mean = np.mean(imagedata)
@@ -31,7 +34,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0)
-    daofind = DAOStarFinder(fwhm=2.5, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=5, threshold=5.*std)
     sources = daofind(img - median)
 
     for col in sources.colnames:
@@ -47,6 +50,6 @@ def findsource(img):
 sources1,positions1,mylist1 =  findsource(fitsdata)
 apertures1 = CircularAperture(positions1, r=10.)
 
-mindata,maxdata = adjustimage(fitsdata, 1)
+mindata,maxdata = adjustimage(fitsdata, 3)
 plt.imshow(fitsdata, cmap='gray', vmin = mindata, vmax = maxdata, origin='lower')
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)

@@ -23,10 +23,10 @@ imgdata1 = onehdu[0].data  #hdu[0].header
 oneimgdata = imgdata1[0:3900,0:3900]
 hang1,lie1 = oneimgdata.shape
 
-t=80
+
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[0+t:3900+t,0:3900]   #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2[0:3900,0:3900]   #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -50,15 +50,17 @@ def findsource(img):
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
+    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'], sources['mag'],sources['peak'],sources['sharpness'],sources['flux']))
 
-    return positions
+
+    return tezhen,positions
 
 
 ###实现找星###
-positions1 =  findsource(oneimgdata)
+tezhen1,positions1 =  findsource(oneimgdata)
 mindata1,maxdata1 = adjustimage(oneimgdata,3)
 
-positions2 =  findsource(twoimgdata)
+tezhen2,positions2 =  findsource(twoimgdata)
 mindata2,maxdata2 = adjustimage(twoimgdata,3)
     
 apertures1 = CircularAperture(positions1, r=5.)
@@ -82,10 +84,10 @@ keyimg2 = np.zeros((lenposition2,128),dtype = np.float32)
 i = 0
 j = 0
 for i in range(lenposition1):
-    keyimg1[i,0:2] = positions1[i,:]
+    keyimg1[i,0:6] = tezhen1[i,:]
     
 for j in range(lenposition2):
-    keyimg2[j,0:2] = positions2[j,:]   
+    keyimg2[j,0:6] = tezhen2[j,:]   
 
 
 # FLANN 参数设计
@@ -150,10 +152,11 @@ plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
 
 
 def witefits(data,name):
-    #os.remove(name + '.fits')
+    os.remove(name + '.fits')
     grey=fits.PrimaryHDU(data)
     greyHDU=fits.HDUList([grey])
     greyHDU.writeto(name + '.fits')
     
 witefits(newimg1,'one')   
 witefits(twoimgdata,'two') 
+witefits(minusimg,'minusimg') 

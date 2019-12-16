@@ -12,20 +12,20 @@ from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
 import cv2
+import os
 
+fitsname2 = 'E:/AST3/xuyi/'+'L20190406_10053_202404 0412_60S_VR_335648.FITS'
+fitsname1 = 'E:/AST3/xuyi/'+'L20190406_10053_202408 0411_60S_VR_335680.FITS'
 
-
-fitsname1 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025202+3212_60S_SI_278406.FITS'
-fitsname2 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025204+3211_60S_SI_278434.FITS'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
-oneimgdata = imgdata1[0:1900,0:2000]
+oneimgdata = imgdata1[1000:2000,2000:3000]
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[100:2000,20:2020]   #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2[1000:2000,2000:3000]   #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -49,15 +49,17 @@ def findsource(img):
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
+    
+    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'], sources['mag'],sources['peak'],sources['sharpness'],sources['flux']))
 
-    return positions
+    return tezhen,positions
 
 
 ###实现找星###
-positions1 =  findsource(oneimgdata)
+tezhen1,positions1 =  findsource(oneimgdata)
 mindata1,maxdata1 = adjustimage(oneimgdata,3)
 
-positions2 =  findsource(twoimgdata)
+tezhen2,positions2 =  findsource(twoimgdata)
 mindata2,maxdata2 = adjustimage(twoimgdata,3)
     
 apertures1 = CircularAperture(positions1, r=5.)
@@ -81,10 +83,10 @@ keyimg2 = np.zeros((lenposition2,128),dtype = np.float32)
 i = 0
 j = 0
 for i in range(lenposition1):
-    keyimg1[i,0:2] = positions1[i,:]
+    keyimg1[i,0:6] = tezhen1[i,:]
     
 for j in range(lenposition2):
-    keyimg2[j,0:2] = positions2[j,:]   
+    keyimg2[j,0:6] = tezhen2[j,:]   
 
 
 # FLANN 参数设计
@@ -99,7 +101,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.2 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
@@ -146,3 +148,13 @@ minusimg = np.float32(newimg1) - np.float32(twoimgdata)
 minjian,maxjian = adjustimage(minusimg,3)
 plt.figure(3)
 plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
+
+def witefits(data,name):
+    os.remove(name + '.fits')
+    grey=fits.PrimaryHDU(data)
+    greyHDU=fits.HDUList([grey])
+    greyHDU.writeto(name + '.fits')
+    
+witefits(newimg1,'one')   
+witefits(twoimgdata,'two') 
+witefits(minusimg,'minusimg') 
