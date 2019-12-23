@@ -20,13 +20,13 @@ fitsname2 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025204+3211_60S_SI_278434.
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
-oneimgdata = imgdata1[0:3900,0:3900]
+oneimgdata = imgdata1[0:8000,0:8000]
 hang1,lie1 = oneimgdata.shape
 
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[0:3900,0:3900]   #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2[0:8000,0:8000]   #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -50,8 +50,8 @@ def findsource(img):
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
-    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'], sources['mag'],sources['peak'],sources['sharpness'],sources['flux']))
-
+    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'], sources['mag'],sources['peak'],sources['sharpness']))
+    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['flux'], sources['peak']))
 
     return tezhen,positions
 
@@ -84,10 +84,10 @@ keyimg2 = np.zeros((lenposition2,128),dtype = np.float32)
 i = 0
 j = 0
 for i in range(lenposition1):
-    keyimg1[i,0:6] = tezhen1[i,:]
+    keyimg1[i,0:4] = tezhen1[i,:]
     
 for j in range(lenposition2):
-    keyimg2[j,0:6] = tezhen2[j,:]   
+    keyimg2[j,0:4] = tezhen2[j,:]   
 
 
 # FLANN 参数设计
@@ -102,7 +102,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.95 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)

@@ -16,21 +16,21 @@ import scipy.signal as signal
 import os
 
 
-fitsname2 = 'E:\\BOOTES4\\20190606\\'+'201906061612060716.fit'
-fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061533510716.fit'
+fitsname2 = 'E:\\BOOTES4\\20190606\\'+'20190606210028AUTOFOCUS_HD17376.fit'
+fitsname1 = 'E:\\BOOTES4\\20190606\\'+'20190606210357AUTOFOCUS_HD17376.fit'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 copydata1 = np.copy(imgdata1)
 imgdata1 = np.float32(copydata1)
-oneimgdata = signal.medfilt2d(imgdata1, kernel_size=9)  # 二维中值滤波
+oneimgdata = signal.medfilt2d(imgdata1, kernel_size=7)  # 二维中值滤波
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
 copydata2 = np.copy(imgdata2)
 imgdata2 = np.float32(copydata2)
-twoimgdata = signal.medfilt2d(imgdata2, kernel_size=9)  # 二维中值滤波
+twoimgdata = signal.medfilt2d(imgdata2, kernel_size=7)  # 二维中值滤波
 hang2,lie2 = twoimgdata.shape
 
 
@@ -104,7 +104,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.8 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.95 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)

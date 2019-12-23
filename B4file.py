@@ -9,7 +9,7 @@ import os
 from astropy.io import fits
 import numpy as np
 
-os.chdir('E:\\BOOTES4\\20190606\\')
+os.chdir('E:\\BOOTES4\\20181118\\03095')
 curentpath = os.getcwd()
 print(curentpath)
 
@@ -18,7 +18,7 @@ print(curentpath)
 for root, dirs, files in os.walk(curentpath):
    for file in files:
        strfile = os.path.join(root, file)
-       if (strfile[-4:] == '.fit'):
+       if (strfile[-5:] == '.fits'):
            hdu = fits.open(strfile)
            data = hdu[0].data
            meandata = np.mean(data)
