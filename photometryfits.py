@@ -14,7 +14,7 @@ from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture, CircularAnnulus
 from photutils import aperture_photometry
 
-fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061532290716.fit'
+fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061526400716.fit'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
@@ -42,18 +42,18 @@ def displayimage(img, coff, i):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=8, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=10, threshold=5.*std)
     sources = daofind(img - median)
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
-
+    print(std)
     return positions
 
 def photometryimg(positions, img, i):
     
     positionslist = positions.tolist()
     
-    aperture = CircularAperture(positionslist, r=14) #2*FWHM
-    annulus_aperture = CircularAnnulus(positionslist, r_in=32, r_out=48)#4-5*FWHM+2*FWHM
+    aperture = CircularAperture(positionslist, r=20) #2*FWHM
+    annulus_aperture = CircularAnnulus(positionslist, r_in=50, r_out=70)#4-5*FWHM+2*FWHM
     apers = [aperture, annulus_aperture]
     
     displayimage(img,3,i) ###画图1
@@ -97,10 +97,32 @@ apertures1.plot(color='blue', lw=1.5, alpha=0.5)
 
 posflux = photometryimg(positions1, imgdata1, 1)
 
-posflux1,mag1 = sourcephotometry(572,221,posflux)
-posflux2,mag2 = sourcephotometry(333,141,posflux)
+posflux1,mag1 = sourcephotometry(570,230,posflux)
+posflux2,mag2 = sourcephotometry(617,400,posflux)
+posflux3,mag3 = sourcephotometry(748,411,posflux)
+posflux4,mag4 = sourcephotometry(854,442,posflux)
+posflux5,mag5 = sourcephotometry(160,336,posflux)
+posflux6,mag6 = sourcephotometry(338,146,posflux)
 
-print(mag1,mag2)
+
+print(mag1,mag2,mag3,mag4,mag5,mag6)
+phtotemp = []
+phtotemp.append(mag1)
+phtotemp.append(mag2)
+phtotemp.append(mag3)
+phtotemp.append(mag4)
+phtotemp.append(mag5)
+phtotemp.append(mag6)
+
+IRAF = [14.720,14.617,14.614,13.512,14.577,14.366] 
+
 
 FWHMplot(posflux2[1],posflux2[0],14,2) #画图2
-         
+        
+plt.figure(3)
+plt.plot(phtotemp)
+plt.plot(IRAF)
+
+c = [phtotemp[i] - IRAF[i] for i in range(len(IRAF))]
+plt.figure(4)
+plt.plot(c)
