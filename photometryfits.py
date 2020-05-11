@@ -78,7 +78,7 @@ def sourcephotometry(targetx, targety, sumpho, threshold=10):
             #print(mag)
             return sumpho[i],mag
 
-def FWHMplot(x0,y0,width,i):
+def FWHMplot(x0,y0,width,imgdata1,i):
     x0 = int(x0)
     y0 = int(y0)
     pixlist = []
@@ -116,11 +116,13 @@ phtotemp.append(mag6)
 
 IRAF = [14.720,14.617,14.614,13.512,14.577,14.366] 
 
-
-FWHMplot(posflux2[1],posflux2[0],14,2) #画图2
+tuplematrix = np.where(posflux[:,2]==np.max(posflux[:,2]))
+index = tuplematrix[0][0]
+FWHMplot(posflux[index][1],posflux[index][0],15,imgdata1,2)
+#FWHMplot(posflux2[1],posflux2[0],14,2) #画图2
         
 plt.figure(3)
-plt.plot(phtotemp)
+plt.plot(phtotemp,'--')
 plt.plot(IRAF)
 
 c = [phtotemp[i] - IRAF[i] for i in range(len(IRAF))]

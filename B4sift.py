@@ -1,6 +1,6 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
-Created on Wed Nov 20 12:55:25 2019
+Created on Wed Dec 18 21:54:40 2019
 
 @author: dingxu
 """
@@ -12,25 +12,28 @@ from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
 import cv2
-import scipy.signal as signal
+import sys
 import os
+import math
 
-
-fitsname2 = 'E:\\BOOTES4\\20190606\\'+'20190606210028AUTOFOCUS_HD17376.fit'
-fitsname1 = 'E:\\BOOTES4\\20190606\\'+'20190606210357AUTOFOCUS_HD17376.fit'
+name1 = sys.argv[1]
+name2 = sys.argv[2]
+numstr = sys.argv[3]
+fitsname1 = 'E:\\BOOTES4\\20190606\\'+name1
+fitsname2 = 'E:\\BOOTES4\\20190606\\'+name2
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 copydata1 = np.copy(imgdata1)
-imgdata1 = np.float32(copydata1)
-oneimgdata = signal.medfilt2d(imgdata1, kernel_size=7)  # 二维中值滤波
+oneimgdata = np.float32(copydata1)
+timedate = onehdu[0].header['DATE-OBS']
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
 copydata2 = np.copy(imgdata2)
-imgdata2 = np.float32(copydata2)
-twoimgdata = signal.medfilt2d(imgdata2, kernel_size=7)  # 二维中值滤波
+twoimgdata = np.float32(copydata2)
+tempdate = twohdu[0].header['DATE-OBS']
 hang2,lie2 = twoimgdata.shape
 
 
@@ -46,38 +49,37 @@ def adjustimage(imagedata, coffe):
     maxdata = min(Imax,maxdata)
     return mindata,maxdata
 
+def displayimage(img, coff, i):
+    minimg,maximg = adjustimage(img, coff)
+    plt.figure(i)
+    plt.imshow(img, cmap='gray', vmin = minimg, vmax = maximg)
+    plt.savefig(str(i)+'.jpg')
 
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=5, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=8.5, threshold=5.*std)
     sources = daofind(img - median)
 
+    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid']))
+    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['sharpness']))
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
 
-    return positions
+    return tezhen,positions
 
 
 ###实现找星###
-positions1 =  findsource(oneimgdata)
-mindata1,maxdata1 = adjustimage(oneimgdata,3)
-
-positions2 =  findsource(twoimgdata)
-mindata2,maxdata2 = adjustimage(twoimgdata,3)
-    
+tezhen1,positions1 =  findsource(oneimgdata)
+tezhen2,positions2 =  findsource(twoimgdata)
+   
 apertures1 = CircularAperture(positions1, r=5.)
 apertures2 = CircularAperture(positions2, r=5.)
 
-plt.figure(0)
-plt.imshow(oneimgdata, cmap='gray', vmin = mindata1, vmax = maxdata1)
+displayimage(oneimgdata,3,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
-#plt.plot(1398.22,8.1238,'o')
 
-plt.figure(1)
-plt.imshow(twoimgdata, cmap='gray', vmin = mindata2, vmax = maxdata2)
-plt.savefig('two.jpg')
+displayimage(twoimgdata,3,1)
 apertures2.plot(color='blue', lw=1.5, alpha=0.5)
-#plt.plot(760.631,777.187,'o')
 
 lenposition1 = len(positions1)
 lenposition2 = len(positions2)
@@ -86,10 +88,10 @@ keyimg2 = np.zeros((lenposition2,128),dtype = np.float32)
 i = 0
 j = 0
 for i in range(lenposition1):
-    keyimg1[i,0:2] = positions1[i,:]
+    keyimg1[i,0:2] = tezhen1[i,:]
     
 for j in range(lenposition2):
-    keyimg2[j,0:2] = positions2[j,:]   
+    keyimg2[j,0:2] = tezhen2[j,:]   
 
 
 # FLANN 参数设计
@@ -104,15 +106,13 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.95 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
 
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
-minhmerge,maxhmerge = adjustimage(hmerge,3)
-plt.figure(2)
-plt.imshow(hmerge, cmap='gray', vmin = minhmerge, vmax = maxhmerge)
+displayimage(hmerge, 3, 2)
 
 srckp1 = []
 srckp2 = []
@@ -140,25 +140,42 @@ for i in range(lenpipei):
 
 
 H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-newimg1 = cv2.warpPerspective(imgdata1, H, (lie1,hang1))
-minnewimg1,maxnewimg1 = adjustimage(newimg1,3)
-plt.figure(3)
-plt.imshow(newimg1, cmap='gray', vmin = minnewimg1, vmax = maxnewimg1)
+newimg = cv2.warpPerspective(imgdata1, H, (lie1,hang1))
 
+minusimg = np.float32(newimg) - np.float32(imgdata2)
 
+#path = os.getcwd()
+#path = path+'\\'
+path = 'E:\\shunbianyuan\\newdata'+'\\'
+def witefits(data,name,timedate):
+    hdr = fits.Header()
+    hdr['DATE'] = timedate
+    filename = path + name + '.fits'
+    print(filename)
+    if os.path.exists(filename):
+        os.remove(filename)
+    fits.writeto(path+name + '.fits', data, hdr)
+   
+witefits(imgdata2,'Template',tempdate)   
+witefits(newimg,numstr,timedate) 
+witefits(minusimg,'minus',tempdate)
 
-minusimg = np.float32(newimg1) - np.float32(imgdata2)
-#minusimg = np.abs(minusimg)
-minjian,maxjian = adjustimage(minusimg,3)
-plt.figure(3)
-plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
+tempmatrix = np.zeros((3,1),dtype = np.float64)
+tempmatrix[2] = 1
+deltemp = []
 
-
-def witefits(data,name):
-    os.remove(name + '.fits')
-    grey=fits.PrimaryHDU(data)
-    greyHDU=fits.HDUList([grey])
-    greyHDU.writeto(name + '.fits')
+for j in range(lenpipei):
+    tempmatrix[0] = src_pts[j][0]
+    tempmatrix[1] = src_pts[j][1]
     
-witefits(newimg1,'one')   
-witefits(imgdata2,'two') 
+    result = np.dot(H,tempmatrix)
+    
+    rx11 = result[0]/result[2]
+    ry11 = result[1]/result[2]
+    
+    delcha = math.sqrt((rx11-dst_pts[j][0])**2 + (ry11-dst_pts[j][1])**2)
+    deltemp.append(delcha)
+    
+plt.figure(5)
+plt.plot(deltemp)
+print(np.mean(deltemp[15:40]))    

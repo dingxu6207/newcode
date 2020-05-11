@@ -5,9 +5,6 @@ Created on Fri Oct  4 00:17:16 2019
 @author: dingxu
 """
 import os
-
-
-
 listroute = [0 for i in range(8)]
 listroute[0] = 'http://psp.china-vo.org/pspdata/2019/11/20191104/M31-18object/'
 listroute[1] = 'http://psp.china-vo.org/pspdata/2019/11/20191102/M31-18object/'

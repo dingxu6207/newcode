@@ -12,18 +12,19 @@ from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
 import cv2
-#import scipy.signal as signal
 import os
 import math
 
-fitsname1 = 'E:\\BOOTES4\\20181118\\03095\\'+'20181118130453-727-RA.fits'
-fitsname2 = 'E:\\BOOTES4\\20181118\\03095\\'+'20181118125001-285-RA.fits'
-
+#fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061607540716.fit'
+#fitsname2 = 'E:\\BOOTES4\\20190606\\'+'201906061612060716.fit'
+fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'201906061614530716.fit'
+fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'201906061616150716.fit'
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 copydata1 = np.copy(imgdata1)
 imgdata1 = np.float32(copydata1)
 oneimgdata = imgdata1
+timedate = onehdu[0].header['DATE']
 #oneimgdata = signal.medfilt2d(imgdata1, kernel_size=5)  # 二维中值滤波
 hang1,lie1 = oneimgdata.shape
 
@@ -57,11 +58,11 @@ def displayimage(img, coff, i):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=5.0, threshold=3.*std)
+    daofind = DAOStarFinder(fwhm=14, threshold=6.*std)
     sources = daofind(img - median)
 
+    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid']))
     tezhen = np.transpose((sources['xcentroid'], sources['ycentroid']))
-    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['sharpness']))
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
 
     return tezhen,positions
@@ -69,13 +70,10 @@ def findsource(img):
 
 ###实现找星###
 tezhen1,positions1 =  findsource(oneimgdata)
-mindata1,maxdata1 = adjustimage(oneimgdata,3)
-
 tezhen2,positions2 =  findsource(twoimgdata)
-mindata2,maxdata2 = adjustimage(twoimgdata,3)
-    
-apertures1 = CircularAperture(positions1, r=5.)
-apertures2 = CircularAperture(positions2, r=5.)
+   
+apertures1 = CircularAperture(positions1, r=7.)
+apertures2 = CircularAperture(positions2, r=7.)
 
 displayimage(oneimgdata,3,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
@@ -108,7 +106,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.95 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
@@ -150,15 +148,19 @@ displayimage(addimg, 3, 3)
 displayimage(minusimg, 3, 4)
 
 
-def witefits(data,name):
+def witefits(data,name,timedate):
     os.remove(name + '.fits')
-    grey=fits.PrimaryHDU(data)
-    greyHDU=fits.HDUList([grey])
-    greyHDU.writeto(name + '.fits')
+    hdr = fits.Header()
+    hdr['DATE'] = timedate
+    #empty_primary = fits.PrimaryHDU(header=hdr)
+    #grey = fits.PrimaryHDU(data)
+    #greyHDU = fits.HDUList([empty_primary,grey])
+    #greyHDU.writeto(name + '.fits')
+    fits.writeto(name + '.fits', data, hdr)
     
-witefits(newimg1,'one')   
-witefits(imgdata2,'two') 
-witefits(minusimg,'minusimg') 
+witefits(newimg1,'one',timedate)   
+witefits(imgdata2,'two',timedate) 
+witefits(minusimg,'minusimg',timedate) 
 
 tempmatrix = np.zeros((3,1),dtype = np.float64)
 tempmatrix[2] = 1
@@ -177,5 +179,5 @@ for j in range(lenpipei):
     deltemp.append(delcha)
     
 plt.figure(5)
-plt.plot(deltemp[5:15])
-print(np.mean(deltemp[5:15]))    
+plt.plot(deltemp)
+print(np.mean(deltemp[15:40]))    

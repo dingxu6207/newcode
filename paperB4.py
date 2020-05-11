@@ -9,9 +9,13 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 
-fitsname1 = 'E:\\BOOTES4\\20181118\\03095\\'+'20181118130453-727-RA.fits'
-fitsname2 = 'E:\\BOOTES4\\20181118\\03095\\'+'20181118125001-285-RA.fits'
+from photutils import DAOStarFinder
+from astropy.stats import sigma_clipped_stats
+from photutils import CircularAperture
 
+
+fitsname1 = 'E:\\AST3\\RA0252DEC3212\\'+'L20161102_04746_025202+3212_60S_SI_182211.FITS'
+fitsname2 = 'E:\\AST3\\RA0252DEC3212\\'+'L20180310_08663_025202+3212_60S_SI_278406.FITS'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
@@ -36,7 +40,18 @@ def displayimage(img, coff, i):
     minimg,maximg = adjustimage(img, coff)
     plt.figure(i)
     plt.imshow(img, cmap='gray', vmin = minimg, vmax = maximg)
+    plt.plot(705.918, 510.251,'*')
 
+def findsource(img):    
+    mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
+    daofind = DAOStarFinder(fwhm=5.0, threshold=4.*std)
+    sources = daofind(img - median)
+    positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
+    pmag = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['peak'], sources['mag'],sources['flux']))
+    return pmag,positions
 
+pmag1, positions1 = findsource(imgdata1)
 displayimage(imgdata1,3,0)
-displayimage(imgdata2,3,1)
+apertures1 = CircularAperture(positions1, r=10.)
+apertures1.plot(color='blue', lw=1.5, alpha=0.5)
+#print(pmag1)

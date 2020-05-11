@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec 16 23:57:29 2019
+Created on Wed Dec 18 21:54:40 2019
 
 @author: dingxu
 """
@@ -12,25 +12,27 @@ from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
 import cv2
-import scipy.signal as signal
+#import scipy.signal as signal
 import os
 import math
 
-fitsname2 = 'E:\\BOOTES4\\20190606\\'+'201906061536370716.fit'
-fitsname1 = 'E:\\BOOTES4\\20190606\\'+'201906061606300716.fit'
+fitsname1 = 'E:\\BOOTES4\\20181118\\03088\\'+'20181118130518-952-RA.fits'
+fitsname2 = 'E:\\BOOTES4\\20181118\\03088\\'+'20181118130621-081-RA.fits'
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 copydata1 = np.copy(imgdata1)
 imgdata1 = np.float32(copydata1)
-oneimgdata = signal.medfilt2d(imgdata1, kernel_size=7)  # 二维中值滤波
+oneimgdata = imgdata1
+#oneimgdata = signal.medfilt2d(imgdata1, kernel_size=5)  # 二维中值滤波
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
 copydata2 = np.copy(imgdata2)
 imgdata2 = np.float32(copydata2)
-twoimgdata = signal.medfilt2d(imgdata2, kernel_size=7)  # 二维中值滤波
+twoimgdata = imgdata2
+#twoimgdata = signal.medfilt2d(imgdata2, kernel_size=5)  # 二维中值滤波
 hang2,lie2 = twoimgdata.shape
 
 
@@ -46,15 +48,20 @@ def adjustimage(imagedata, coffe):
     maxdata = min(Imax,maxdata)
     return mindata,maxdata
 
+def displayimage(img, coff, i):
+    minimg,maximg = adjustimage(img, coff)
+    plt.figure(i)
+    plt.imshow(img, cmap='gray', vmin = minimg, vmax = maximg)
+    plt.savefig(str(i)+'.jpg')
 
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=4.9, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=8.5, threshold=5.*std)
     sources = daofind(img - median)
 
-    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'], sources['mag'],sources['peak'],sources['sharpness']))
-    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['peak']))
+    tezhen = np.transpose((sources['xcentroid'], sources['ycentroid']))
+    #tezhen = np.transpose((sources['xcentroid'], sources['ycentroid'],sources['sharpness']))
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
 
     return tezhen,positions
@@ -62,24 +69,16 @@ def findsource(img):
 
 ###实现找星###
 tezhen1,positions1 =  findsource(oneimgdata)
-mindata1,maxdata1 = adjustimage(oneimgdata,3)
-
 tezhen2,positions2 =  findsource(twoimgdata)
-mindata2,maxdata2 = adjustimage(twoimgdata,3)
-    
+   
 apertures1 = CircularAperture(positions1, r=5.)
 apertures2 = CircularAperture(positions2, r=5.)
 
-plt.figure(0)
-plt.imshow(oneimgdata, cmap='gray', vmin = mindata1, vmax = maxdata1)
+displayimage(oneimgdata,3,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
-#plt.plot(1398.22,8.1238,'o')
 
-plt.figure(1)
-plt.imshow(twoimgdata, cmap='gray', vmin = mindata2, vmax = maxdata2)
-plt.savefig('two.jpg')
+displayimage(twoimgdata,3,1)
 apertures2.plot(color='blue', lw=1.5, alpha=0.5)
-#plt.plot(760.631,777.187,'o')
 
 lenposition1 = len(positions1)
 lenposition2 = len(positions2)
@@ -88,10 +87,10 @@ keyimg2 = np.zeros((lenposition2,128),dtype = np.float32)
 i = 0
 j = 0
 for i in range(lenposition1):
-    keyimg1[i,0:3] = tezhen1[i,:]
+    keyimg1[i,0:2] = tezhen1[i,:]
     
 for j in range(lenposition2):
-    keyimg2[j,0:3] = tezhen2[j,:]   
+    keyimg2[j,0:2] = tezhen2[j,:]   
 
 
 # FLANN 参数设计
@@ -112,9 +111,7 @@ for i, (m1, m2) in enumerate(matches):
         temp2.append(m1.trainIdx)
 
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
-minhmerge,maxhmerge = adjustimage(hmerge,3)
-plt.figure(2)
-plt.imshow(hmerge, cmap='gray', vmin = minhmerge, vmax = maxhmerge)
+displayimage(hmerge, 3, 2)
 
 srckp1 = []
 srckp2 = []
@@ -143,17 +140,11 @@ for i in range(lenpipei):
 
 H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
 newimg1 = cv2.warpPerspective(imgdata1, H, (lie1,hang1))
-minnewimg1,maxnewimg1 = adjustimage(newimg1,3)
-plt.figure(3)
-plt.imshow(newimg1, cmap='gray', vmin = minnewimg1, vmax = maxnewimg1)
 
-
-
+addimg = np.float32(newimg1) + np.float32(imgdata2)
 minusimg = np.float32(newimg1) - np.float32(imgdata2)
-#minusimg = np.abs(minusimg)
-minjian,maxjian = adjustimage(minusimg,3)
-plt.figure(3)
-plt.imshow(minusimg, cmap='gray', vmin = minjian, vmax = maxjian)
+displayimage(addimg, 3, 3)
+displayimage(minusimg, 3, 4)
 
 
 def witefits(data,name):
@@ -182,7 +173,6 @@ for j in range(lenpipei):
     delcha = math.sqrt((rx11-dst_pts[j][0])**2 + (ry11-dst_pts[j][1])**2)
     deltemp.append(delcha)
     
-plt.figure(4)
+plt.figure(5)
 plt.plot(deltemp)
-print(np.mean(deltemp))    
-    
+print(np.mean(deltemp[15:40]))    

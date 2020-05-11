@@ -20,13 +20,13 @@ fitsname2 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025204+3211_60S_SI_278434.
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
-oneimgdata = imgdata1[0:8000,0:8000]
+oneimgdata = imgdata1[0:1000,0:1000]
 hang1,lie1 = oneimgdata.shape
 
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[0:8000,0:8000]   #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2[0:1000,0:1000]   #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -46,7 +46,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=3, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=14, threshold=5.*std)
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))

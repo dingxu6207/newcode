@@ -45,7 +45,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=3, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=14, threshold=5.*std)
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
