@@ -14,18 +14,20 @@ from photutils import CircularAperture
 import cv2
 import os
 
-fitsname2 = 'E:/AST3/xuyi/'+'L20190406_10053_202404 0412_60S_VR_335648.FITS'
-fitsname1 = 'E:/AST3/xuyi/'+'L20190406_10053_202408 0411_60S_VR_335680.FITS'
+fitsname1 = 'E:/AST3/xuyi/'+'L20190406_10053_202404 0412_60S_VR_335648.FITS'
+fitsname2 = 'E:/AST3/xuyi/'+'L20190406_10053_202408 0411_60S_VR_335680.FITS'
 
 
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
-oneimgdata = imgdata1[0:1500,0:1500]
+print(imgdata1.shape)#10560/2=5280
+#oneimgdata = imgdata1[5280:10560,5280:10560]
+oneimgdata = imgdata1[0:5280,0:5280]
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[0:1500,0:1500]  #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2[0:5280,0:5280]  #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -45,7 +47,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=10, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=12, threshold=8.*std)
     sources = daofind(img - median)
 
     positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
