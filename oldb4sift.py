@@ -106,7 +106,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.95 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
@@ -165,6 +165,7 @@ witefits(minusimg,'minusimg',timedate)
 tempmatrix = np.zeros((3,1),dtype = np.float64)
 tempmatrix[2] = 1
 deltemp = []
+rmstemp = []
 
 for j in range(lenpipei):
     tempmatrix[0] = src_pts[j][0]
@@ -177,10 +178,16 @@ for j in range(lenpipei):
     
     delcha = math.sqrt((rx11-dst_pts[j][0])**2 + (ry11-dst_pts[j][1])**2)
     deltemp.append(delcha)
+    rmscha = (rx11-dst_pts[j][0])**2 + (ry11-dst_pts[j][1])**2
+    rmstemp.append(rmscha)
     
 plt.figure(5)
 plt.plot(deltemp)
-print(np.mean(deltemp))  
+plt.title('8 constant model')
+print(np.mean(deltemp)) 
+sumrms = np.sum(rmscha)
+rmsresult = np.sqrt(sumrms/12)
+print(rmsresult)
 
 #15 20
 def SNRcompute(zuobiaox,zuobiaoy,img):

@@ -22,12 +22,14 @@ onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 print(imgdata1.shape)#10560/2=5280
 #oneimgdata = imgdata1[5280:10560,5280:10560]
-oneimgdata = imgdata1[0:5280,0:5280]
+#oneimgdata = imgdata1[0:5280,0:5280]
+oneimgdata = imgdata1
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
 imgdata2 = twohdu[0].data  #hdu[0].header
-twoimgdata = imgdata2[0:5280,0:5280]  #图像粗匹配，相差较小匹配效果更好
+twoimgdata = imgdata2
+#twoimgdata = imgdata2[0:5280,0:5280]  #图像粗匹配，相差较小匹配效果更好
 hang2,lie2 = twoimgdata.shape
 
 
@@ -103,7 +105,7 @@ lenpipei = 0
 temp1 = []
 temp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.75 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.3 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         temp1.append(m1.queryIdx)
         temp2.append(m1.trainIdx)
