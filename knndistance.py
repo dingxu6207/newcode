@@ -170,7 +170,8 @@ for i, (m1, m2) in enumerate(matches):
 hmerge = np.hstack((imgdata1, imgdata2)) #水平拼接
 displayimage(hmerge, 3, 2)
 
-
+srckp1 = []
+srckp2 = []
 for i in range(lenpipei):
     x = knntemp1[i]
     y = knntemp2[i]
@@ -180,7 +181,14 @@ for i in range(lenpipei):
     y20 = temp1[x][3]
     x30 = temp1[x][4]
     y30 = temp1[x][5]
-
+    
+    srckp1.append(x10)
+    srckp1.append(y10)
+    srckp1.append(x20)
+    srckp1.append(y20)
+    srckp1.append(x30)
+    srckp1.append(y30)
+    src_pts = np.float32(srckp1).reshape(-1,2)
     
     x11 = temp2[y][0]
     y11 = temp2[y][1]
@@ -189,7 +197,23 @@ for i in range(lenpipei):
     x31 = temp2[y][4]
     y31 = temp2[y][5]
     
+    srckp2.append(x11)
+    srckp2.append(y11)
+    srckp2.append(x21)
+    srckp2.append(y21)
+    srckp2.append(x31)
+    srckp2.append(y31)
+    dst_pts = np.float32(srckp2).reshape(-1,2)
+    
     plt.plot([x10,x11+lie1],[y10,y11],linewidth = 0.8)
     plt.plot([x20,x21+lie1],[y20,y21],linewidth = 0.8)
     plt.plot([x30,x31+lie1],[y30,y31],linewidth = 0.8)
       
+
+H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+newimg1 = cv2.warpPerspective(imgdata1, H, (lie1,hang1))
+
+addimg = np.float32(newimg1) + np.float32(imgdata2)
+minusimg = np.float32(newimg1) - np.float32(imgdata2)
+displayimage(addimg, 3, 3)
+displayimage(minusimg, 3, 4)
