@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun 12 14:07:10 2020
+Created on Fri Jun 12 21:07:42 2020
 
 @author: dingxu
 """
@@ -12,66 +12,45 @@ import numpy as np
 from sklearn.cluster import KMeans
 from scipy import signal
 import operator as op
+from scipy.optimize import curve_fit
 
-zuoxian = 2569-200
-youxian = 2597+200
+n_order = 3
 
-path = 'E:/pytest/B6202/'
-strfile = 'E:/pytest/B6201/spec-55862-B6202_sp01-026.fits'
-phdulist = fits.open(strfile)
+matrix = np.loadtxt('pu1.txt')
 
-#print(phdulist.info)
-#print(phdulist[0].header)
+duanwave  = matrix[:,0]
+duanflux = matrix[:,1]
 
-flux = phdulist[0].data[0]
-Liwave = phdulist[0].data[2]
+duanwave = duanwave[220:1427]
+duanflux = duanflux[220:1427]
 
-duanwave = Liwave[zuoxian:youxian]
-duanflux = flux[zuoxian:youxian]
-#duanwave = Liwave
-#duanflux = flux
+def fund(x, a, b):
+    return a*(x**b )
 
-n_dot = youxian-zuoxian
-n_order = 4
+x = duanwave/5100
+popt, pcov = curve_fit(fund, x, duanflux)
 
-#x = np.linspace(0,1,n_dot) 
-x = (duanwave-np.min(duanwave))/(np.max(duanwave)-np.min(duanwave))
-p = np.poly1d(np.polyfit(x,duanflux,n_order)) 
-
+ydata = popt[0]*x**popt[1]
 plt.figure(0)
-plt.plot(Liwave,flux)
-
-
-plt.figure(1)
-plt.plot(duanwave,duanflux,duanwave,p(x))
-
-plt.figure(2)
-m = duanflux/p(x)
-plt.plot(duanwave,m)
-
-
+plt.plot(duanwave,ydata)
+plt.plot(duanwave,duanflux)
 sample = np.vstack((x,duanflux)).T
-plt.figure(3)
-plt.plot(x,duanflux)
 
 class Ransac:
     a = 0.
     b = 0.
-    c = 0.
-    d = 0.
-    e = 0
-    n_order = 4  #ax**3+bx**2+cx+d
+    
+    def fund(self,x, a, b):
+        return a*(x**b )
+    
+    
     def least_square(self,samples):
-        ##最小二乘法
         x = samples[:,0]
-        #x = np.linspace(0, 1, n_dot)
-        y = samples[:,1]
-        p = np.poly1d(np.polyfit(x,y,n_order)) 
-        
-        #print(p.coeffs)
-        a,b,c,d,e = p.coeffs
-        
-        return a,b,c,d,e
+        duanflux = samples[:,1]
+        popt, pcov = curve_fit(self.fund, x, duanflux)
+        a = popt[0]
+        b = popt[1]
+        return a,b
 
     def isRepeat(self,sour,tar):
         #判断是否含有重复样本
@@ -98,11 +77,10 @@ class Ransac:
                 outliers.append(list(samples[i]))
         return np.array(inliers),np.array(outliers)
 
-    def fun_plot(self,sample,a,b,c,d,e):
-        #data_x = np.linspace(0, 1, n_dot)
-        data_x = sample[:,0]
-        data_y = [a * x**4 + b*x**3+c*x**2+d*x+e for x in data_x]
-        plt.figure(4)
+    def fun_plot(self,sample,a,b):
+        data_x = sample[:,0] 
+        data_y = a*(data_x**b)
+        plt.figure(1)
         plt.ion()
         plt.plot(data_x,data_y,'r')
         plt.plot(sample[:,0],sample[:,1])
@@ -110,7 +88,7 @@ class Ransac:
         plt.pause(0.05)
         plt.clf()
 
-    def ransac(self,samples, points_ratio = 0.1, epoch = 100, reject_dis = 0.5 ,inliers_ratio = 0.2):
+    def ransac(self,samples, points_ratio = 0.003, epoch = 400, reject_dis = 0.02e-15 ,inliers_ratio = 0.1):
         # samples 输入样本，形如 [[x1 ,yi],[x2, y2]]
         # point_ratio  随机选择样本点的比例
         # epoch    迭代轮数
@@ -121,39 +99,33 @@ class Ransac:
         for i in range(epoch):
             inliers,outliers = self.random_samples(samples,points_ratio)
             #print(inliers.shape)
-            a,b,c,d,e = self.least_square(inliers)
+            a,b = self.least_square(inliers)
             # self.fun_plot(samples,weight_cur,bias_cur)
             for j in range(len(outliers)):
-                distance = np.abs(a*(outliers[j,0]**4)+b*(outliers[j,0]**3)+c*(outliers[j,0]**2)+d*outliers[j,0]+e - outliers[j,1])
+                distance = np.abs(a*(outliers[j,0]**b) - outliers[j,1])
                 if distance <=  reject_dis:
                     inliers = np.vstack((inliers,outliers[j]))
                     
-            a,b,c,d,e = self.least_square(inliers)
-            self.fun_plot(samples,a,b,c,d,e)
-                        
+            a,b = self.least_square(inliers)
+            self.fun_plot(samples,a,b)
+            
             if len(inliers) >= len(samples)* inliers_ratio:
                if len(inliers) > inliers_num_cur:
                     self.a = a
-                    self.b = b
-                    self.c = c
-                    self.d = d 
-                    self.e = e   
+                    self.b = b     
                     self.inliers = inliers
+                    
                     inliers_num_cur = len(inliers)
                     print(i,len(inliers))
-        
+
 test = Ransac()
 test.ransac(sample)
 data_x = sample[:,0]
-data_y = [test.a * x**4 + test.b*x**3+test.c*x**2+test.d*x+test.e for x in data_x]
+data_y = [test.a * x**test.b for x in data_x]
 plt.plot(duanwave, sample[:, 1])
 plt.plot(duanwave,data_y,'r')
-
-induanwave = test.inliers[:,0]*((np.max(duanwave)-np.min(duanwave)))+np.min(duanwave)
-plt.plot(induanwave,test.inliers[:,1],'.')
 plt.show()
 plt.pause(4)
 
-plt.figure(5)
-guiyi = sample[:, 1]/data_y
-plt.plot(duanwave, guiyi)
+induanwave = test.inliers[:,0]*5100
+plt.plot(induanwave,test.inliers[:,1],'.')
