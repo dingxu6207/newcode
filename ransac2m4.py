@@ -13,45 +13,26 @@ from sklearn.cluster import KMeans
 from scipy import signal
 import operator as op
 
-zuoxian = 2569-200
-youxian = 2597+200
 
-path = 'E:/pytest/B6202/'
-strfile = 'E:/pytest/B6201/spec-55862-B6202_sp01-026.fits'
-phdulist = fits.open(strfile)
-
-#print(phdulist.info)
-#print(phdulist[0].header)
-
-flux = phdulist[0].data[0]
-Liwave = phdulist[0].data[2]
-
-duanwave = Liwave[zuoxian:youxian]
-duanflux = flux[zuoxian:youxian]
-#duanwave = Liwave
-#duanflux = flux
-
-n_dot = youxian-zuoxian
 n_order = 4
 
-#x = np.linspace(0,1,n_dot) 
+matrix = np.loadtxt('pu1.txt')
+
+duanwave  = matrix[:,0]
+duanflux = matrix[:,1]
+
+duanwave = duanwave[258:1427]
+duanflux = duanflux[258:1427]
+
 x = (duanwave-np.min(duanwave))/(np.max(duanwave)-np.min(duanwave))
-p = np.poly1d(np.polyfit(x,duanflux,n_order)) 
+p = np.poly1d(np.polyfit(x,duanflux,n_order))
 
 plt.figure(0)
-plt.plot(Liwave,flux)
-
-
-plt.figure(1)
-plt.plot(duanwave,duanflux,duanwave,p(x))
-
-plt.figure(2)
-m = duanflux/p(x)
-plt.plot(duanwave,m)
-
+plt.plot(duanwave,duanflux)
+plt.plot(duanwave,p(x))
 
 sample = np.vstack((x,duanflux)).T
-plt.figure(3)
+plt.figure(1)
 plt.plot(x,duanflux)
 
 class Ransac:
@@ -102,7 +83,7 @@ class Ransac:
         #data_x = np.linspace(0, 1, n_dot)
         data_x = sample[:,0]
         data_y = [a * x**4 + b*x**3+c*x**2+d*x+e for x in data_x]
-        plt.figure(4)
+        plt.figure(2)
         plt.ion()
         plt.plot(data_x,data_y,'r')
         plt.plot(sample[:,0],sample[:,1])
@@ -110,7 +91,7 @@ class Ransac:
         plt.pause(0.05)
         plt.clf()
 
-    def ransac(self,samples, points_ratio = 0.1, epoch = 100, reject_dis = 0.5 ,inliers_ratio = 0.2):
+    def ransac(self,samples, points_ratio = 0.005, epoch = 1000, reject_dis = 0.02e-15 ,inliers_ratio = 0.1):
         # samples 输入样本，形如 [[x1 ,yi],[x2, y2]]
         # point_ratio  随机选择样本点的比例
         # epoch    迭代轮数
@@ -154,6 +135,6 @@ plt.plot(induanwave,test.inliers[:,1],'.')
 plt.show()
 plt.pause(4)
 
-plt.figure(5)
+plt.figure(3)
 guiyi = sample[:, 1]/data_y
 plt.plot(duanwave, guiyi)

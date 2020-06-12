@@ -14,7 +14,6 @@ from scipy import signal
 import operator as op
 from scipy.optimize import curve_fit
 
-n_order = 3
 
 matrix = np.loadtxt('pu1.txt')
 
@@ -23,6 +22,7 @@ duanflux = matrix[:,1]
 
 duanwave = duanwave[220:1427]
 duanflux = duanflux[220:1427]
+
 
 def fund(x, a, b):
     return a*(x**b )
