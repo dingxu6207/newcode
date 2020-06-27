@@ -19,11 +19,13 @@ import cv2
 import os
 import math
 from itertools import combinations,permutations
+from time import time
 
-#fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'20190603132646Auto.fit'
-#fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'20190603132720Auto.fit'
-fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'M31.fts'
-fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'M31o.fts'
+
+fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'20190603132646Auto.fit'
+fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'20190603132720Auto.fit'
+#fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'M31.fts'
+#fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'M31o.fts'
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
 #M = cv2.getRotationMatrix2D(((1024-1)/2.0,(1024-1)/2.0),13,1)
@@ -69,7 +71,7 @@ def displayimage(img, coff, i):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=8, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=12, threshold=5.*std)
     sources = daofind(img - median)
 
     #tezhen = np.transpose((sources['sharpness'], sources['roundness1'],sources['flux']))
@@ -100,12 +102,15 @@ apertures2.plot(color='blue', lw=1.5, alpha=0.5)
 #newstar1 =  posiandmag1[np.lexsort(posiandmag1.T)]
 #newstar12 =  posiandmag2[np.lexsort(posiandmag2.T)]
 
+start = time()
+print("Start: " + str(start))
+
 posiandmag1.sort(key=lambda x:x[2],reverse=True)
 posiandmag2.sort(key=lambda x:x[2],reverse=True)
 
 ##选19颗亮星
-lenstar = min(lenstar1,lenstar2)
-lenstar = 80
+#lenstar = min(lenstar1,lenstar2)
+lenstar = 26
 posiandmag1 = posiandmag1[0:lenstar]
 posiandmag2 = posiandmag2[0:lenstar]
 
@@ -166,14 +171,21 @@ for i in range(0,lensan1):
             pitemp1.append(temp1[i])
             pitemp2.append(temp2[j])
             count = count+1
+
+
+stop = time()
+print("Stop: " + str(stop))
+print(str(stop-start) + "秒") 
+
+
             
 displayimage(oneimgdata,3,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
-plt.plot(pitemp1[0][0][0],pitemp1[0][0][1],'*')
+#plt.plot(pitemp1[0][0][0],pitemp1[0][0][1],'*')
 
 displayimage(twoimgdata,3,1)
 apertures2.plot(color='blue', lw=1.5, alpha=0.5)
-plt.plot(pitemp2[0][0][0],pitemp2[0][0][1],'*')    
+#plt.plot(pitemp2[0][0][0],pitemp2[0][0][1],'*')    
 
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
 displayimage(hmerge, 3, 2) 
@@ -188,4 +200,6 @@ for i in range(0,count):
     
         lie1 = imgdata1.shape[1]
         plt.plot([x10,x11+lie1],[y10,y11],linewidth = 0.8)  
-        
+
+
+       

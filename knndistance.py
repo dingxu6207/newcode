@@ -26,7 +26,6 @@ imgdata1 = np.rot90(imgdata1)
 
 copydata1 = np.copy(imgdata1)
 imgdata1 = np.float32(copydata1)
-#imgdata1 = np.rot90(imgdata1)
 oneimgdata = imgdata1
 timedate = onehdu[0].header['DATE']
 #oneimgdata = signal.medfilt2d(imgdata1, kernel_size=5)  # 二维中值滤波
@@ -99,7 +98,7 @@ posiandmag2.sort(key=lambda x:x[2],reverse=True)
 
 ##选19颗亮星
 lenstar = min(lenstar1,lenstar2)
-lenstar = 10
+lenstar = 14
 posiandmag1 = posiandmag1[0:lenstar]
 posiandmag2 = posiandmag2[0:lenstar]
 
@@ -137,17 +136,20 @@ temp11 = np.zeros((lensan1,128),dtype = np.float32)
 #lensan1 = len(sanjiao1)
 #temp1 = []
 for i in range (0,lensan1):
-    jie1 = julisanjiao(sanjiao1,i)
-    temp1[i,0:9] = jie1
-    temp11[i,0:3] = temp1[i,6:9]
-    
+    jie1 = julisanjiao(sanjiao1,i)   
+    if jie1[6]>jie1[7] and jie1[7]>jie1[8]:
+        temp1[i,0:9] = jie1
+        temp11[i,0:3] = temp1[i,6:9]
+
+  
 lensan2 = len(sanjiao2)    
 temp2 = np.zeros((lensan1,9),dtype = np.float32)
 temp22 = np.zeros((lensan1,128),dtype = np.float32)
 for i in range (0,lensan2):
-    jie2 = julisanjiao(sanjiao2,i)
-    temp2[i,0:9] = jie2
-    temp22[i,0:3] = temp2[i,6:9]
+    jie2 = julisanjiao(sanjiao2,i) 
+    if jie2[6]>jie2[7] and jie2[7]>jie2[8]:
+        temp2[i,0:9] = jie2
+        temp22[i,0:3] = temp2[i,6:9]
 
  
 # FLANN 参数设计
@@ -162,7 +164,7 @@ lenpipei = 0
 knntemp1 = []
 knntemp2 = []
 for i, (m1, m2) in enumerate(matches):
-    if m1.distance < 0.2 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
+    if m1.distance < 0.4 * m2.distance:# 两个特征向量之间的欧氏距离，越小表明匹配度越高。
         lenpipei = lenpipei+1
         knntemp1.append(m1.queryIdx)
         knntemp2.append(m1.trainIdx)

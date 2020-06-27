@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from photutils import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
 from photutils import CircularAperture
-
-filename = 'J:\\0716\\'+'201911292219550716.fit'
+#20190603132720Auto.fit
+filename = 'E:\\shunbianyuan\\newdata\\'+'M31.fts' #20140530Saturn-018I.fit
 fitshdu = fits.open(filename)
 fitsdata = fitshdu[0].data
 
@@ -32,7 +32,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0)
-    daofind = DAOStarFinder(fwhm=8.5, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm=6, threshold=3.*std)
     sources = daofind(img - median)
 
     for col in sources.colnames:
@@ -63,7 +63,7 @@ def displayimage(img, coff, i):
     plt.savefig(str(i)+'.jpg')
     
 sources1,positions1,mylist1 =  findsource(fitsdata)
-apertures1 = CircularAperture(positions1, r=10.)
+apertures1 = CircularAperture(positions1, r=5.)
 displayimage(fitsdata,3,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
 tuplematrix = np.where(mylist1[:,2]==np.max(mylist1[:,2]))
