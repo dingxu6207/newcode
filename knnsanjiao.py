@@ -20,24 +20,23 @@ import os
 import math
 from itertools import combinations,permutations
 from time import time
+import ois
 
-
-fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'20190603132646Auto.fit'
-fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'20190603132720Auto.fit'
+fitsname1 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025202+3212_60S_SI_278406.FITS'
+fitsname2 = 'E:/AST3/RA0252DEC3212/'+'L20180310_08663_025204+3211_60S_SI_278434.FITS'
+#fitsname1 = 'E:/AST3/xuyi/'+'L20190406_10053_202404 0412_60S_VR_335648.FITS'
+#fitsname2 = 'E:/AST3/xuyi/'+'L20190406_10053_202408 0411_60S_VR_335680.FITS'
+#fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'20190603132646Auto.fit'
+#fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'201910231459050716.fit'
 #fitsname1 = 'E:\\shunbianyuan\\newdata\\'+'M31.fts'
 #fitsname2 = 'E:\\shunbianyuan\\newdata\\'+'M31o.fts'
 onehdu = fits.open(fitsname1)
 imgdata1 = onehdu[0].data  #hdu[0].header
-#M = cv2.getRotationMatrix2D(((1024-1)/2.0,(1024-1)/2.0),13,1)
-#dst = cv2.warpAffine(imgdata1,M,(1024,1024))
-#imgdata1 = dst
 
 copydata1 = np.copy(imgdata1)
 imgdata1 = np.float32(copydata1)
 #imgdata1 = np.rot90(imgdata1)
 oneimgdata = imgdata1
-timedate = onehdu[0].header['DATE']
-#oneimgdata = signal.medfilt2d(imgdata1, kernel_size=5)  # 二维中值滤波
 hang1,lie1 = oneimgdata.shape
 
 twohdu = fits.open(fitsname2)
@@ -46,7 +45,6 @@ imgdata2 = twohdu[0].data  #hdu[0].header
 copydata2 = np.copy(imgdata2)
 imgdata2 = np.float32(copydata2)
 twoimgdata = imgdata2
-#twoimgdata = signal.medfilt2d(imgdata2, kernel_size=5)  # 二维中值滤波
 hang2,lie2 = twoimgdata.shape
 
 
@@ -66,12 +64,12 @@ def displayimage(img, coff, i):
     minimg,maximg = adjustimage(img, coff)
     plt.figure(i)
     plt.imshow(img, cmap='gray', vmin = minimg, vmax = maximg)
-    plt.savefig(str(i)+'.jpg')
+    #plt.savefig(str(i)+'.jpg')
 
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0) 
-    daofind = DAOStarFinder(fwhm=12, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm = 12, threshold=5.*std)
     sources = daofind(img - median)
 
     #tezhen = np.transpose((sources['sharpness'], sources['roundness1'],sources['flux']))
@@ -93,14 +91,8 @@ lenstar2 = len(positions2)
 apertures1 = CircularAperture(positions1, r=13.)
 apertures2 = CircularAperture(positions2, r=13.)
 
-displayimage(oneimgdata,3,0)
-apertures1.plot(color='blue', lw=1.5, alpha=0.5)
 
-displayimage(twoimgdata,3,1)
-apertures2.plot(color='blue', lw=1.5, alpha=0.5)
 
-#newstar1 =  posiandmag1[np.lexsort(posiandmag1.T)]
-#newstar12 =  posiandmag2[np.lexsort(posiandmag2.T)]
 
 start = time()
 print("Start: " + str(start))
@@ -110,7 +102,7 @@ posiandmag2.sort(key=lambda x:x[2],reverse=True)
 
 ##选19颗亮星
 #lenstar = min(lenstar1,lenstar2)
-lenstar = 26
+lenstar = 60
 posiandmag1 = posiandmag1[0:lenstar]
 posiandmag2 = posiandmag2[0:lenstar]
 
@@ -190,16 +182,33 @@ apertures2.plot(color='blue', lw=1.5, alpha=0.5)
 hmerge = np.hstack((oneimgdata, twoimgdata)) #水平拼接
 displayimage(hmerge, 3, 2) 
    
+
+srckp1 = []
+srckp2 = []
 for i in range(0,count):
     for j in range(0,3):
         x10 = pitemp1[i][j][0]
         x11 = pitemp2[i][j][0]
-    
+            
         y10 = pitemp1[i][j][1]
         y11 = pitemp2[i][j][1]
+        
+        srckp1.append(x10)
+        srckp1.append(y10)
+        srckp2.append(x11)
+        srckp2.append(y11)
+        src_pts = np.float32(srckp1).reshape(-1,2)
+        dst_pts = np.float32(srckp2).reshape(-1,2)
     
         lie1 = imgdata1.shape[1]
         plt.plot([x10,x11+lie1],[y10,y11],linewidth = 0.8)  
 
 
-       
+H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)    
+newimg = cv2.warpPerspective(imgdata1, H, (lie1,hang1))
+displayimage(newimg, 3, 3) 
+minusimg = np.float32(newimg) - np.float32(imgdata2)  
+displayimage(minusimg, 3, 4)  
+
+#diff = ois.optimal_system(newimg, imgdata2)[0]
+#displayimage(diff, 3, 5)  
