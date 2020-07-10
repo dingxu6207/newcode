@@ -18,10 +18,13 @@ from scipy import asarray as ar
 
 #20190603132720Auto.fit
 file  = '0.fits'
-path = 'E:\\shunbianyuan\\todingx\\aligendata\\'
+path = 'E:\\shunbianyuan\\dataxingtuan\\alngc7142\\'
 filename = path+file
 fitshdu = fits.open(filename)
-fitsdata = fitshdu[0].data
+data = fitshdu[0].data
+i = 1 #行扫描 i = 21
+j = 1 #列扫描 j=20
+fitsdata = data[796*i:796+796*i,778*j:778+778*j]
 
 def adjustimage(imagedata, coffe):
     mean = np.mean(imagedata)
@@ -39,7 +42,7 @@ def adjustimage(imagedata, coffe):
 
 def findsource(img):    
     mean, median, std = sigma_clipped_stats(img, sigma=3.0)
-    daofind = DAOStarFinder(fwhm = 5.06, threshold=5.*std)
+    daofind = DAOStarFinder(fwhm = 3, threshold=8.*std)
     sources = daofind(img - median)
 
     for col in sources.colnames:
@@ -71,26 +74,34 @@ def displayimage(img, coff, i):
     minimg,maximg = adjustimage(img, coff)
     plt.figure(i)
     plt.imshow(img, cmap='gray', vmin = minimg, vmax = maximg)
-    plt.savefig(str(i)+'.jpg')
+    #plt.savefig(str(i)+'.jpg')
     
 
-sources1,positions1,mylist1 =  findsource(fitsdata)
-apertures1 = CircularAperture(positions1, r=15.)
+sources1,positions1,mylist =  findsource(fitsdata)
+mylist1 = []
+for i, val in enumerate(mylist):
+    if mylist[i][2] > 10 and mylist[i][2] < 620:
+        mylist1.append(mylist[i])
+     
+        
+arraylist = np.array(mylist1)
+positions1 = arraylist[:,0:2]
+apertures1 = CircularAperture(positions1, r=5.)
 displayimage(fitsdata,1,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
 
 np.savetxt(path+'location.txt', positions1,fmt='%f',delimiter=' ')
 
 mylist1.sort(key=lambda x:x[2],reverse=True)
-index = 3
-width = 20
+index = 2
+width = 10
 
 templist = FWHMplot(mylist1[index][1],mylist1[index][0],width,fitsdata,1)
 
 
 x = ar(range(width*2))
 
-black = np.mean(templist[0:10])
+black = np.mean(templist[0:5])
 
 popt,pcov = curve_fit(gaussian,x,templist,p0=[3,4,3])
 plt.plot(x,gaussian(x,*popt),'ro:',label='fit')

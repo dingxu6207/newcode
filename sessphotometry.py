@@ -5,6 +5,7 @@ Created on Fri Jul  3 15:57:14 2020
 1、sessaligen
 2、sessfindsatar
 3、seseephometry
+4、sessdisplay
 @author: dingxu
 """
 
@@ -18,12 +19,12 @@ from photutils import aperture_photometry
 
 filetemp = []
 count = 0
-oripath = 'E:\\shunbianyuan\\todingx\\aligendata\\'  #路径参数
+oripath = 'E:\\shunbianyuan\\dataxingtuan\\alngc7142\\'  #路径参数
 for root, dirs, files in os.walk(oripath):
    for file in files:
-       #print(file)
-       count = count+1
-       filetemp.append(file)
+       if (file[-5:] == '.fits'):
+           count = count+1
+           filetemp.append(file)
        
        
 def adjustimage(imagedata, coffe):
@@ -50,8 +51,8 @@ def photometryimg(positions, img, i):
     
     positionslist = positions.tolist()
     
-    aperture = CircularAperture(positionslist, r=8) #2*FWHM
-    annulus_aperture = CircularAnnulus(positionslist, r_in=16, r_out=24)#4-5*FWHM+2*FWHM
+    aperture = CircularAperture(positionslist, r=5) #2*FWHM
+    annulus_aperture = CircularAnnulus(positionslist, r_in=10, r_out=16)#4-5*FWHM+2*FWHM
     apers = [aperture, annulus_aperture]
     
     displayimage(img, 1, i) ###画图1
@@ -65,8 +66,9 @@ def photometryimg(positions, img, i):
     final_sum = phot_table['aperture_sum_0'] - bkg_sum
     phot_table['residual_aperture_sum'] = final_sum       
     posflux = np.column_stack((positions, phot_table['residual_aperture_sum']))  
-    return posflux
-    #return final_sum
+    #return posflux
+    magstar = 25 - 2.5*np.log10(abs(final_sum/1))
+    return posflux,magstar
 
 def sourcephotometry(targetx, targety, sumpho, threshold=10):
     hang,lie = sumpho.shape    
@@ -74,7 +76,7 @@ def sourcephotometry(targetx, targety, sumpho, threshold=10):
         delt = np.sqrt((targetx - sumpho[i][0])**2+(targety - sumpho[i][1])**2)
         if delt < threshold:
             #print(sumpho[i])
-            mag = 25 - 2.5*np.log10(sumpho[i][2]/90) #90曝光时间
+            mag = 25 - 2.5*np.log10(sumpho[i][2]/1) #90曝光时间
             #print(mag)
             return sumpho[i],mag
 
@@ -94,30 +96,35 @@ fitshdu = fits.open(oripath+filetemp[0])
 fitsdata = fitshdu[0].data
 displayimage(fitsdata, 1, 0)
 
-jiaoyan = []
+jiaoyantemp = []
 startemp = []
-for i in range(0,count):
+
+m = 1#行扫描 i = 39
+n = 1 #列扫描 j = 39
+for i in range(0, count):
     try:
         fitshdu = fits.open(oripath+filetemp[i])
-        fitsdata = fitshdu[0].data    
-        posflux = photometryimg(lacation, fitsdata, 1)
-        posflux1,mag1 = sourcephotometry(170,324,posflux)  #比较星位置1
-        posflux2,mag2 = sourcephotometry(388,307,posflux)  #比较星位置2
-        jiayan = mag1-mag2
-        jiaoyan.append(jiayan)
+        data = fitshdu[0].data    
+        fitsdata = data[796*m:796+796*m,778*n:778+778*n]
+        posflux,magstar = photometryimg(lacation, fitsdata, 1)           
+        startemp.append(magstar) 
+        arraytemp = np.array(startemp).T
         
-        posflux3,mag3 = sourcephotometry(338,359,posflux) #目标星
-        magstar = mag3-mag1
-        startemp.append(magstar)
+        posflux1,mag1 = sourcephotometry(250, 384, posflux)  #比较星位置1
+        posflux2,mag2 = sourcephotometry(562, 660, posflux)  #比较星位置2
+              
+        jiaoyan = mag1-mag2        
+                
+        jiaoyantemp.append(jiaoyan)
+                
         print('ok')
     except:
         print('error!!!')
-        
-jiaoyandata = pltquxian(jiaoyan)       
+    
+starlight = np.hstack((lacation, arraytemp)) 
+np.savetxt('starlight.txt', starlight)   
+#jiaoyandata = pltquxian(jiaoyan)       
 plt.figure(2)
-plt.plot(jiaoyandata,'.')
+plt.plot(jiaoyantemp,'.')
 
 
-startempdata = pltquxian(startemp)
-plt.figure(3)
-plt.plot(startempdata,'.')
