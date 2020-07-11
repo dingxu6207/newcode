@@ -22,9 +22,9 @@ path = 'E:\\shunbianyuan\\dataxingtuan\\alngc7142\\'
 filename = path+file
 fitshdu = fits.open(filename)
 data = fitshdu[0].data
-i = 1 #行扫描 i = 21
-j = 1 #列扫描 j=20
-fitsdata = data[796*i:796+796*i,778*j:778+778*j]
+i = 2 #行扫描 i = 21
+j = 3 #列扫描 j=20
+fitsdata = data[398*i:398+398*i,389*j:389+389*j]
 
 def adjustimage(imagedata, coffe):
     mean = np.mean(imagedata)
@@ -80,7 +80,7 @@ def displayimage(img, coff, i):
 sources1,positions1,mylist =  findsource(fitsdata)
 mylist1 = []
 for i, val in enumerate(mylist):
-    if mylist[i][2] > 10 and mylist[i][2] < 620:
+    if mylist[i][2] > 4 and mylist[i][2] < 720:
         mylist1.append(mylist[i])
      
         
@@ -89,6 +89,9 @@ positions1 = arraylist[:,0:2]
 apertures1 = CircularAperture(positions1, r=5.)
 displayimage(fitsdata,1,0)
 apertures1.plot(color='blue', lw=1.5, alpha=0.5)
+#plt.plot( 382.673,68.8134, '*')
+#plt.plot( 3.27848,210.307, '*')
+#plt.plot( 0.262071,350.794, '*')
 
 np.savetxt(path+'location.txt', positions1,fmt='%f',delimiter=' ')
 

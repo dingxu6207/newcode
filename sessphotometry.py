@@ -51,14 +51,15 @@ def photometryimg(positions, img, i):
     
     positionslist = positions.tolist()
     
-    aperture = CircularAperture(positionslist, r=5) #2*FWHM
-    annulus_aperture = CircularAnnulus(positionslist, r_in=10, r_out=16)#4-5*FWHM+2*FWHM
+    aperture = CircularAperture(positionslist, r=4) #2*FWHM
+    annulus_aperture = CircularAnnulus(positionslist, r_in=8, r_out=12)#4-5*FWHM+2*FWHM
     apers = [aperture, annulus_aperture]
     
     displayimage(img, 1, i) ###画图1
     aperture.plot(color='blue', lw=0.5)
     annulus_aperture.plot(color='red', lw=0.2)
     plt.pause(0.001)
+    plt.clf()
     
     phot_table = aperture_photometry(img, apers)
     bkg_mean = phot_table['aperture_sum_1'] / annulus_aperture.area
@@ -99,19 +100,19 @@ displayimage(fitsdata, 1, 0)
 jiaoyantemp = []
 startemp = []
 
-m = 1#行扫描 i = 39
-n = 1 #列扫描 j = 39
+m = 2#行扫描 i = 39
+n = 3 #列扫描 j = 39
 for i in range(0, count):
     try:
         fitshdu = fits.open(oripath+filetemp[i])
         data = fitshdu[0].data    
-        fitsdata = data[796*m:796+796*m,778*n:778+778*n]
+        fitsdata = data[398*m:398+398*m,389*n:389+389*n]
         posflux,magstar = photometryimg(lacation, fitsdata, 1)           
         startemp.append(magstar) 
         arraytemp = np.array(startemp).T
         
-        posflux1,mag1 = sourcephotometry(250, 384, posflux)  #比较星位置1
-        posflux2,mag2 = sourcephotometry(562, 660, posflux)  #比较星位置2
+        posflux1,mag1 = sourcephotometry(326, 134, posflux)  #比较星位置1
+        posflux2,mag2 = sourcephotometry(361, 308, posflux)  #比较星位置2
               
         jiaoyan = mag1-mag2        
                 
